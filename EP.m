@@ -87,9 +87,9 @@ classdef EP < handle
             end
             
             % datastore
-            % <kaiser>
+            % <kaiser-amir>
             this.path.datastore = 'path/to/datastore/';
-            % </kaiser>
+            % </kaiser-amir>
             
             % data
             this.path.data = fullfile(assets, 'data.mat');
@@ -109,7 +109,6 @@ classdef EP < handle
     end
     
     % Data
-    % <kaiser>
     methods
         function initData(this)
             % `data` file contains `kernel`, `rf`, `fp1` and `fp2`
@@ -149,6 +148,7 @@ classdef EP < handle
             this.data.fp2 = fp2;
         end
         
+        % <kaiser>
         function kernel = getKernel(this)
             % Get `kernel` for each neuron
             %
@@ -173,7 +173,9 @@ classdef EP < handle
             
             rf = randn(41, 2);
         end
+        % </kaiser>
         
+        % <amir>
         function fp1 = getFp1(this)
             % Get `fixation point 1` for each neuron in dva
             %
@@ -197,8 +199,8 @@ classdef EP < handle
             
             fp2 = randn(41, 2);
         end
+        % </amir>
     end
-    % </kaiser>
     
     % X features
     methods
@@ -315,7 +317,6 @@ classdef EP < handle
     end
     
     % Y features
-    % <neda>
     methods
         function initY(this)
             % `y` file contains `raw` and `nna`
@@ -352,6 +353,7 @@ classdef EP < handle
             raw = this.data.kernel;
         end
         
+        % <neda>
         function nna = getNna(this)
             % Get `nna` (neda nategh amplitude) features for each neuron
             %
@@ -362,8 +364,8 @@ classdef EP < handle
             kernel = this.data.kernel;
             nna = randn(41, 3);
         end
+        % </neda>
     end
-    % </neda>
     
     % Rho
     methods
