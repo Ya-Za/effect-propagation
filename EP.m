@@ -22,6 +22,42 @@ classdef EP < handle
         %   each neuron in dva
         %   - fp2: (neuron x 2) double array. (x, y) `fixation point 2` for
         %   each neuron in dva
+        % - idx
+        %   - rf
+        %       - a: amplitude
+        %       - mx: mu_x
+        %       - my: mu_y
+        %       - sx: sigma_x
+        %       - sy: sigma_y
+        %       - r: rho
+        %       - gx: gamma_x
+        %       - gy: gamma_y
+        %   - ff
+        %       - a
+        %       - mx
+        %       - my
+        %       - sx
+        %       - sy
+        %       - r
+        %       - gx
+        %       - gy
+        %   - st
+        %       - a
+        %       - mx
+        %       - my
+        %       - sx
+        %       - sy
+        %       - r
+        %       - gx
+        %       - gy
+        %   - time: from saccadic onset (ms)
+        %       - fix:      -inf:-100
+        %       - pre:      -100:0
+        %       - sacon:    0
+        %       - sacoff:   30
+        %       - post:     0:100
+        %       - peri:     -100:100
+        %       - st:       100:inf
         % - x
         %   - d1: (neuron x 1) double vector. distance between `RF` and
         %   `FP1` for each neuron
@@ -39,6 +75,7 @@ classdef EP < handle
         path
         population
         data
+        idx
         x
         y
     end
@@ -214,6 +251,95 @@ classdef EP < handle
             end
         end
         % </amir>
+    end
+    
+    % Idx
+    methods
+        function initIdx(this)
+            % Initialize `path`
+            
+            % rf
+            this.idx.rf.a   =    1;
+            this.idx.rf.mx  =    2;
+            this.idx.rf.my  =    3;
+            this.idx.rf.sx  =    4;
+            this.idx.rf.sy  =    5;
+            this.idx.rf.r   =    6;
+            this.idx.rf.gx  =    7;
+            this.idx.rf.gy  =    8;
+            
+            % ff
+            this.idx.ff.a   =    9;
+            this.idx.ff.mx  =    10;
+            this.idx.ff.my  =    11;
+            this.idx.ff.sx  =    12;
+            this.idx.ff.sy  =    13;
+            this.idx.ff.r   =    14;
+            this.idx.ff.gx  =    15;
+            this.idx.ff.gy  =    16;
+            
+            % st
+            this.idx.st.a   =   17;
+            this.idx.st.mx  =   18;
+            this.idx.st.my  =   19;
+            this.idx.st.sx  =   20;
+            this.idx.st.sy  =   21;
+            this.idx.st.r   =   22;
+            this.idx.st.gx  =   23;
+            this.idx.st.gy  =   24;
+            
+            % time
+            this.idx.time.fix = [];
+            this.idx.time.pre = [];
+            this.idx.time.sacon = ceil(1081 / 2);
+            this.idx.time.sacoff = this.idx.time.sacon + 30;
+            this.idx.time.post = [];
+            this.idx.time.peri = [];
+            this.idx.time.st = [];
+        end
+        
+        function v = getParam(neuron, source, name, time, latency)
+            % For a neuron, get parameter values of a specified source at 
+            % given times and latencies
+            %
+            % Parameters
+            % ----------
+            % - source: ['rf', 'ff', 'st']
+            %   Source of effect
+            % - name: ['a', 'mx', 'my', 'sx', 'sy', 'r', 'gx', 'gy']
+            %   Name of parameter
+            % - time: integer | integer vector | ['fix', 'pre', 'sacon',
+            % 'sacoff', 'post', 'peri', 'st'
+            %   Time from saccadic onset (ms)
+            % - latency: integer | integer vector | 'max'
+            %
+            % Returns
+            % -------
+            % - v: double array
+            %   Values of specified parameter based on `neuron`, `source`, 
+            %   `name`, `time` and `latency`
+            
+            % feature
+            feature = this.idx.(source).(name);
+            
+            % time
+            if ischar(time)
+                time = this.idx.time.(time);
+            end
+            
+            % latency
+            % - numeric
+            if isnumeric(latency)
+                v = this.kernel(neuron, feature, time, latency);
+            else
+                switch latency
+                    case 'max'
+                        v = max(this.kernel(neuron, feature, time, :), 4);
+                    otherwise
+                        error('latency must be numeric or `max`');
+                end
+            end
+        end
     end
     
     % X features
