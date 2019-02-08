@@ -1,5 +1,5 @@
 classdef EP < handle
-    % EffectPropagation: Propagation of perisaccadic effect across V4/MT 
+    % EffectPropagation: Propagation of perisaccadic effect across V4/MT
     % population
     
     properties
@@ -16,7 +16,7 @@ classdef EP < handle
         % - data
         %   - kernel: (neuron x feature x time x latency) double
         %   array
-        %   - rf: (neuron x 2) double array. (x, y) `receptive field` 
+        %   - rf: (neuron x 2) double array. (x, y) `receptive field`
         %   center for each neuron at fixation time in dva
         %   - fp1: (neuron x 2) double array. (x, y) `fixation point 1` for
         %   each neuron in dva
@@ -88,7 +88,9 @@ classdef EP < handle
             
             % datastore
             % <kaiser-amir>
-            this.path.datastore = 'path/to/datastore/';
+            %             this.path.datastore = 'path/to/datastore/';
+            this.path.datastore = 'K:\Barfak\scdata';
+            
             % </kaiser-amir>
             
             % data
@@ -132,14 +134,14 @@ classdef EP < handle
                 save(filename, 'rf', '-append');
             end
             this.data.rf = rf;
-
+            
             % `fp1`
             if ~exist('fp1', 'var')
                 fp1 = this.getFp1();
                 save(filename, 'fp1', '-append');
             end
             this.data.fp1 = fp1;
-
+            
             % `fp2`
             if ~exist('fp2', 'var')
                 fp2 = this.getFp2();
@@ -183,9 +185,9 @@ classdef EP < handle
             % -------
             % - fp1: (neuron x 2) double array
             
-            folder = this.path.datastore;
-            
-            fp1 = randn(41, 2);
+            %             folder = this.path.datastore;
+            fp1 = zeros(41,2);
+            %             fp1 = randn(41, 2);
         end
         
         function fp2 = getFp2(this)
@@ -196,8 +198,20 @@ classdef EP < handle
             % - fp2: (neuron x 2) double array
             
             folder = this.path.datastore;
-            
-            fp2 = randn(41, 2);
+            info = load('J:\Projects\m190124_spatial_sensitivity\m190205_state_based_neurometric_y\make_the_main_lists.mat');
+            fp2 = nan(size(info.nuron_list,1),2);
+            for nn = 1:size(info.nuron_list,1)
+                clear xx
+                id = num2str(info.nuron_list(nn,1)-20000000);
+                if(info.nuron_list(nn,2)>=10)
+                    ch = num2str(info.nuron_list(nn,2));
+                else
+                    ch = ['0' num2str(info.nuron_list(nn,2))];
+                end
+                un = '1';
+                xx = load([folder '\scdata_' id '_' ch '_' un '.mat'],'trial_info');
+                fp2(nn,:) = xx.trial_info.saccade_target;
+            end
         end
         % </amir>
     end
@@ -219,14 +233,14 @@ classdef EP < handle
                 save(filename, 'd1');
             end
             this.x.d1 = d1;
-
+            
             % `d2`
             if ~exist('d2', 'var')
                 d2 = this.getD2();
                 save(filename, 'd2', '-append');
             end
             this.x.d2 = d2;
-
+            
             % `sd1`
             if ~exist('sd1', 'var')
                 sd1 = this.getSd1();
@@ -333,7 +347,7 @@ classdef EP < handle
                 save(filename, 'raw');
             end
             this.y.raw = raw;
-
+            
             % `nna`
             if ~exist('nna', 'var')
                 nna = this.getNna();
@@ -343,7 +357,7 @@ classdef EP < handle
         end
         
         function raw = getRaw(this)
-            % Get `raw` features (same as sensitivity values) for each 
+            % Get `raw` features (same as sensitivity values) for each
             % neuron
             %
             % Returns
