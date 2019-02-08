@@ -88,13 +88,9 @@ classdef EP < handle
             
             % datastore
             % <kaiser-amir>
-<<<<<<< HEAD
-            this.path.datastore = 'J:\MATLAB\neuralset\scdata\';
-=======
             %             this.path.datastore = 'path/to/datastore/';
             this.path.datastore = 'K:\Barfak\scdata';
-            
->>>>>>> bba6b6b07e604cedbd467ae5db26388f86c4f32b
+
             % </kaiser-amir>
             
             % data
