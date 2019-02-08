@@ -370,9 +370,9 @@ classdef EP < handle
             % - name: ['a', 'mx', 'my', 'sx', 'sy', 'r', 'gx', 'gy']
             %   Name of parameter
             % - time: integer | integer vector | ['fix', 'pre', 'sacon',
-            % 'sacoff', 'post', 'peri', 'st'
+            % 'sacoff', 'post', 'peri', 'st']
             %   Time from saccadic onset (ms)
-            % - latency: integer | integer vector | 'max'
+            % - latency: integer | integer vector
             %
             % Returns
             % -------
@@ -384,22 +384,20 @@ classdef EP < handle
             feature = this.idx.(source).(name);
             
             % time
+            if ~exist('time', 'var')
+                time = 1:size(this.kernel, 3);
+            end
             if ischar(time)
                 time = this.idx.time.(time);
             end
             
             % latency
-            % - numeric
-            if isnumeric(latency)
-                v = this.kernel(neuron, feature, time, latency);
-            else
-                switch latency
-                    case 'max'
-                        v = max(this.kernel(neuron, feature, time, :), 4);
-                    otherwise
-                        error('latency must be numeric or `max`');
-                end
+            if ~exist('latency', 'var')
+                latency = 1:size(this.kernel, 4);
             end
+            
+            % values
+            v = this.kernel(neuron, feature, time, latency);
         end
     end
     
@@ -562,8 +560,28 @@ classdef EP < handle
             % -------
             % - nna: (neuron x 3) double matrix
             
-            kernel = this.data.kernel;
-            nna = randn(41, 3);
+            neurons = 1:this.population;
+            sm = @EP.summax;
+            
+            % nna_rf
+            % - (a_rf_fix - a_rf_peri) / a_rf_fix
+            a_rf_fix = sm(this.getParam(neurons, 'rf', 'a', 'fix'));
+            a_rf_peri = sm(this.getParam(neurons, 'rf', 'a', 'peri'));
+            nna_rf = (a_rf_fix - a_rf_peri) ./ a_rf_fix;
+            
+            % nna_ff
+            % - (a_ff_fix - a_ff_peri) / a_ff_fix
+            a_ff_fix = sm(this.getParam(neurons, 'ff', 'a', 'fix'));
+            a_ff_peri = sm(this.getParam(neurons, 'ff', 'a', 'peri'));
+            nna_ff = (a_ff_fix - a_ff_peri) ./ a_ff_fix;
+            
+            % nna_st
+            % - (a_rf_fix - a_rf_peri) / a_rf_fix
+            a_st_fix = sm(this.getParam(neurons, 'st', 'a', 'fix'));
+            a_st_peri = sm(this.getParam(neurons, 'st', 'a', 'peri'));
+            nna_st = (a_st_fix - a_st_peri) ./ a_st_fix;
+            
+            nna = [nna_rf, nna_ff, nna_st];
         end
         % </neda>
     end
@@ -626,6 +644,20 @@ classdef EP < handle
             % Euclidean distance between two points
             
             d = norm(p1 - p2);
+        end
+        function v = summax(v)
+            % Sum on `time`, max on `latency`
+            %
+            % Parameters
+            % ----------
+            % - v: [neuron x feature x time x latency] double array
+            %   Input values
+            %
+            % Returns
+            % -------
+            % - v: [neuron x 1] double vector
+            
+            v = squeeze(sum(max(v, [], 4), 3));
         end
     end
     
