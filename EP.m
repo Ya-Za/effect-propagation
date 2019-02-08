@@ -127,7 +127,7 @@ classdef EP < handle
             % <kaiser-amir>
             %             this.path.datastore = 'path/to/datastore/';
             this.path.datastore = 'K:\Barfak\scdata';
-            
+
             % </kaiser-amir>
             
             % data
@@ -190,27 +190,88 @@ classdef EP < handle
         % <kaiser>
         function kernel = getKernel(this)
             % Get `kernel` for each neuron
-            %
             % Returns
-            % -------
             % - kernel: (neuron x feature x time x latency) double array
-            
-            folder = this.path.datastore;
-            
-            kernel = randn(41, 25, 1081, 27);
+            kernel = nan(this.population,25,1081,27);
+            dblst = load('J:\MATLAB\MT Gaussian Modelling\Paper Figures\db\make_the_main_lists.mat');
+            for int_neuron = 1:size(dblst.probe_list,1)
+                sess = dblst.probe_list(int_neuron,1);
+                chnl = dblst.probe_list(int_neuron,2);
+                mdl = load(['J:\MATLAB\MT Gaussian Modelling\Effect Studies\modulation problem\Gaussian\models\',num2str(sess),'_',num2str(chnl),'\fold_0.mat']);                
+                %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+                try
+                    scd = load([this.path.datastore,'scdata_',num2str(dblst.probe_list(int_neuron,1)-20000000),'_',strcat(num2str((dblst.probe_list(int_neuron,2)-mod(dblst.probe_list(int_neuron,2),10))/10),num2str(mod(dblst.probe_list(int_neuron,2),10))),'_1.mat'],'tdata');
+                    [fp_x,fp_y] = pol2cart(scd.tdata.params.Fix1_theta/180*pi,scd.tdata.params.Fix1_radius);
+                    [ct_x,ct_y] = pol2cart(scd.tdata.params.prob_theta/180*pi,scd.tdata.params.probe_radius);
+                    probTweak_x = scd.tdata.params.probTweak_x;
+                    probTweak_y = scd.tdata.params.probTweak_y;
+                    probsize = scd.tdata.params.probsize;
+                catch
+                    fp_x = nan; fp_y = nan;
+                    ct_x = nan; ct_y = nan;
+                    probTweak_x = nan; probTweak_y = nan;
+                    probsize = nan;
+                end
+                %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+                set_of_coefficients = mdl.nProfile.set_of_kernels.gas.cof;
+                modified_set_of_coefficients = nan(size(set_of_coefficients));
+                % RF part
+                modified_set_of_coefficients(:,:,1) = set_of_coefficients(:,:,1);
+                modified_set_of_coefficients(:,:,2) = fp_x + ct_x + (set_of_coefficients(:,:,2) - (probsize+1)/2)*probTweak_x; % mu_x
+                modified_set_of_coefficients(:,:,3) = fp_y + ct_y + (set_of_coefficients(:,:,3) - (probsize+1)/2)*probTweak_y; % mu_y
+                modified_set_of_coefficients(:,:,4) = set_of_coefficients(:,:,4).*probTweak_x; % sigma_x
+                modified_set_of_coefficients(:,:,5) = set_of_coefficients(:,:,5).*probTweak_y; % sigma_y
+                modified_set_of_coefficients(:,:,6) = set_of_coefficients(:,:,6); % rho
+                modified_set_of_coefficients(:,:,7) = set_of_coefficients(:,:,7)./probTweak_x; % gamma_x
+                modified_set_of_coefficients(:,:,8) = set_of_coefficients(:,:,8)./probTweak_y; % gamma_y
+                % FF part
+                modified_set_of_coefficients(:,:,09) = set_of_coefficients(:,:,09);
+                modified_set_of_coefficients(:,:,10) = fp_x + ct_x + (set_of_coefficients(:,:,10) - (probsize+1)/2)*probTweak_x; % mu_x
+                modified_set_of_coefficients(:,:,11) = fp_y + ct_y + (set_of_coefficients(:,:,11) - (probsize+1)/2)*probTweak_y; % mu_y
+                modified_set_of_coefficients(:,:,12) = set_of_coefficients(:,:,12).*probTweak_x; % sigma_x
+                modified_set_of_coefficients(:,:,13) = set_of_coefficients(:,:,13).*probTweak_y; % sigma_y
+                modified_set_of_coefficients(:,:,14) = set_of_coefficients(:,:,14); % rho
+                modified_set_of_coefficients(:,:,15) = set_of_coefficients(:,:,15)./probTweak_x; % gamma_x
+                modified_set_of_coefficients(:,:,16) = set_of_coefficients(:,:,16)./probTweak_y; % gamma_y
+                % ST part
+                modified_set_of_coefficients(:,:,17) = set_of_coefficients(:,:,17);
+                modified_set_of_coefficients(:,:,18) = fp_x + ct_x + (set_of_coefficients(:,:,18) - (probsize+1)/2)*probTweak_x; % mu_x
+                modified_set_of_coefficients(:,:,19) = fp_y + ct_y + (set_of_coefficients(:,:,19) - (probsize+1)/2)*probTweak_y; % mu_y
+                modified_set_of_coefficients(:,:,20) = set_of_coefficients(:,:,20).*probTweak_x; % sigma_x
+                modified_set_of_coefficients(:,:,21) = set_of_coefficients(:,:,21).*probTweak_y; % sigma_y
+                modified_set_of_coefficients(:,:,22) = set_of_coefficients(:,:,22); % rho
+                modified_set_of_coefficients(:,:,23) = set_of_coefficients(:,:,23)./probTweak_x; % gamma_x
+                modified_set_of_coefficients(:,:,24) = set_of_coefficients(:,:,24)./probTweak_y; % gamma_y
+                % c part
+                modified_set_of_coefficients(:,:,25) = set_of_coefficients(:,:,25); % c
+                % permute, and insert
+                t_modified_set_of_coefficients = permute(modified_set_of_coefficients,[3 1 2]);
+                kernel(int_neuron,:,:,:) = t_modified_set_of_coefficients;
+                clearvars modified_set_of_coefficients t_modified_set_of_coefficients
+                clearvars fp_x fp_y ct_x ct_y probTweak_x probTweak_y probsize mdl sess chnl
+            end
         end
         
         function rf = getRf(this)
             % Get `receptive field` center for each neuron in dva
-            %
             % Returns
-            % -------
             % - rf: (neuron x 2) double array
-            
-            folder = this.path.datastore;
-            kernel = this.data.kernel;
-            
-            rf = randn(41, 2);
+            rf = nan(this.population,2);
+            dblst = load('J:\MATLAB\MT Gaussian Modelling\Paper Figures\db\make_the_main_lists.mat');
+            for int_neuron = 1:size(dblst.probe_list,1)
+                rf_in_probe = dblst.probe_list(int_neuron,3:4);
+                try
+                    scd = load([this.path.datastore,'scdata_',num2str(dblst.probe_list(int_neuron,1)-20000000),'_',strcat(num2str((dblst.probe_list(int_neuron,2)-mod(dblst.probe_list(int_neuron,2),10))/10),num2str(mod(dblst.probe_list(int_neuron,2),10))),'_1.mat'],'tdata');
+                    [fp_x,fp_y] = pol2cart(scd.tdata.params.Fix1_theta/180*pi,scd.tdata.params.Fix1_radius);
+                    [ct_x,ct_y] = pol2cart(scd.tdata.params.prob_theta/180*pi,scd.tdata.params.probe_radius);
+                    rf_in_dva = [ ...
+                        fp_x + ct_x + (rf_in_probe(1) - (scd.tdata.params.probsize+1)/2)*scd.tdata.params.probTweak_x , ...
+                        fp_y + ct_y + (rf_in_probe(2) - (scd.tdata.params.probsize+1)/2)*scd.tdata.params.probTweak_y ];
+                    rf(int_neuron,:) = rf_in_dva;
+                catch
+                    rf(int_neuron,:) = [nan nan];
+                end
+            end
         end
         % </kaiser>
         
@@ -595,4 +656,3 @@ classdef EP < handle
         end
     end
 end
-
