@@ -14,7 +14,7 @@ dev/*
 
 ### dev chosen ###
 *.gif
-*.mat
+# *.mat
 *.zip
 
 ### Git ###
