@@ -350,13 +350,16 @@ classdef EP < handle
             this.idx.st.gy  =   24;
             
             % time
-            this.idx.time.fix = [];
+            this.idx.time.fix = [-500:-100]+541;
             this.idx.time.pre = [];
-            this.idx.time.sacon = ceil(1081 / 2);
+            this.idx.time.sacon = 0+541;
             this.idx.time.sacoff = this.idx.time.sacon + 30;
             this.idx.time.post = [];
             this.idx.time.peri = [];
             this.idx.time.st = [];
+            this.idx.time.pa = [-010:+010]+541;
+            this.idx.time.ff = [-050:-000]+541;
+            this.idx.time.st = [-050:-000]+541;
         end
         
         function v = getParam(neuron, source, name, time, latency)
