@@ -97,6 +97,9 @@ classdef EP < handle
             this.initData();
             toc();
             
+            % idx
+            this.initIdx();
+            
             % x
             disp('X features');
             tic();
@@ -355,14 +358,14 @@ classdef EP < handle
             this.idx.time.sacon = 0+541;
             this.idx.time.sacoff = this.idx.time.sacon + 30;
             this.idx.time.post = [];
-            this.idx.time.peri = [];
+            this.idx.time.peri = [-100:+100]+541;
             this.idx.time.st = [];
             this.idx.time.pa = [-010:+010]+541;
             this.idx.time.ff = [-050:-000]+541;
             this.idx.time.st = [-050:-000]+541;
         end
         
-        function v = getParam(neuron, source, name, time, latency)
+        function v = getParam(this, neuron, source, name, time, latency)
             % For a neuron, get parameter values of a specified source at 
             % given times and latencies
             %
@@ -388,7 +391,7 @@ classdef EP < handle
             
             % time
             if ~exist('time', 'var')
-                time = 1:size(this.kernel, 3);
+                time = 1:size(this.data.kernel, 3);
             end
             if ischar(time)
                 time = this.idx.time.(time);
@@ -396,11 +399,11 @@ classdef EP < handle
             
             % latency
             if ~exist('latency', 'var')
-                latency = 1:size(this.kernel, 4);
+                latency = 1:size(this.data.kernel, 4);
             end
             
             % values
-            v = this.kernel(neuron, feature, time, latency);
+            v = this.data.kernel(neuron, feature, time, latency);
         end
     end
     
@@ -497,9 +500,9 @@ classdef EP < handle
                 v = rf(i, :) - fp1(i, :);
                 
                 if dot(u, v) >= 0
-                    sd1 = d1(i);
+                    sd1(i) = d1(i);
                 else
-                    sd1 = -d1(i);
+                    sd1(i) = -d1(i);
                 end
             end
         end
@@ -514,7 +517,7 @@ classdef EP < handle
             sd1 = this.x.sd1;
             d2 = this.x.d2;
             
-            sd2 = d2 * sign(sd1);
+            sd2 = d2 .* sign(sd1);
         end
     end
     
@@ -594,6 +597,11 @@ classdef EP < handle
         function corrD1Raw(this)
             % Correlation between `d1` and `raw`
             
+            filename = this.path.rho.d1Raw;
+            if exist(filename, 'file')
+                return;
+            end 
+            
             % x-feature
             d1 = this.x.d1;
             
@@ -601,24 +609,29 @@ classdef EP < handle
             raw = this.y.raw;
             
             % corr(x, y)
-            [s1, s2, s3, s4] = size(raw);
-            rho = zeros(s1, s2, s3, s4);
-            for i1 = 1:s1
-                for i2 = 1:s2
-                    for i3 = 1:s3
-                        for i4 = 1:s4
-                            rho(i1, i2, i3, i4) = corr(d1, squeeze(raw(:, i2, i3, i4)));
-                        end
+            [~, n1, n2, n3] = size(raw);
+            rho = zeros(n1, n2, n3);
+            for i1 = 1:n1
+                for i2 = 1:n2
+                    for i3 = 1:n3
+                        rho(i1, i2, i3) = ...
+                            corr(d1, squeeze(raw(:, i1, i2, i3)), ...
+                                'Rows', 'complete' ...
+                            );
                     end
                 end
             end
             
             % save
-            filename = this.path.rho.d1Raw;
             save(filename, 'd1', 'raw', 'rho');
         end
         function corrD1Nna(this)
             % Correlation between `d1` and `nna`
+            
+            filename = this.path.rho.d1Nna;
+            if exist(filename, 'file')
+                return;
+            end
             
             % x-feature
             d1 = this.x.d1;
@@ -627,16 +640,13 @@ classdef EP < handle
             nna = this.y.nna;
             
             % corr(x, y)
-            [s1, s2] = size(nna);
-            rho = zeros(s1, s2);
-            for i1 = 1:s1
-                for i2 = 1:s2
-                    rho(i1, i2) = corr(d1, squeeze(nna(:, i2)));
-                end
+            n = size(nna, 2);
+            rho = zeros(n, 1);
+            for i = 1:n
+                rho(i) = corr(d1, squeeze(nna(:, i)), 'Rows', 'complete');
             end
             
             % save
-            filename = this.path.rho.d1Raw;
             save(filename, 'd1', 'nna', 'rho');
         end
     end
